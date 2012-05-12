@@ -3,4 +3,4 @@
   (:use [midje.sweet]))
 
 (fact "run-script works"
-  (with-out-str (v8/run-script "3/0") => "Invalid"))
+  (with-out-str (v8/run-script "3/0")) => "Invalid")
