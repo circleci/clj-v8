@@ -1,0 +1,21 @@
+V8_INC=../v8/include
+V8_LIB=../v8/out/x64.release
+
+CC=g++
+CFLAGS=-c -fPIC -I$(V8_INC)
+LDFLAGS=-macosx_version_min 10.7 -dylib -L. -L$(V8_LIB) -rpath . -lv8 -lc -lstdc++
+SOURCES=v8wrapper.cc
+OBJECTS=$(SOURCES:.cc=.o)
+TARGET=libv8wrapper.dylib
+
+all: $(TARGET)
+	
+clean:
+	rm -f *.o $(TARGET)
+
+.cc.o:
+	$(CC) $(CFLAGS) $< -o $@
+
+$(TARGET): $(OBJECTS)
+	ld $(LDFLAGS) $(OBJECTS) -o $(TARGET)
+
