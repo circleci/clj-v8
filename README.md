@@ -4,8 +4,15 @@ clj-v8
 Clojure wrapper for the v8 JS engine
 
 
+Organization
++++++++++++++++
+
+clj-v8 contains the clj-v8 jar. clj-v8-native contains the native deps only
+
+
+
 Rebuilding from scratch
--------------------------
+++++++++++++++++++++++++++
 
 TL;DR
 -----
