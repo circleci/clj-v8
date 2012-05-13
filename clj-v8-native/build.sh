@@ -12,15 +12,15 @@ function create_output_dirs {
 function detect {
     if [ "`uname`" = "Darwin" ]; then
         PLATFORM=macosx
-    
+
     elif [ "`uname`" = "Linux" ]; then
         PLATFORM=linux
-    
+
         if [ "`uname -m`" != "x86_64" ]; then
             echo "This is a 32-bit only Linux. I'd suggest you find a 64-bit build box. Sorry."
             exit
         fi
-    
+
     else
         echo "I don't know how to build/package everything on `uname` platform. Sorry"
         exit
@@ -28,10 +28,14 @@ function detect {
 }
 
 function build_v8 {
-    rm -rf v8
-    git clone git://github.com/v8/v8.git v8
+    if [[ -e "v8" ]]; then
+        cd v8
+        git pull
+    else
+        git clone git://github.com/v8/v8.git v8
+        cd v8
+    fi
 
-    cd v8
     make dependencies
 
     if [ "$PLATFORM" = "macosx" ]; then
@@ -49,20 +53,20 @@ function build_v8 {
 }
 
 function build_and_copy_v8w {
-    cd v8wrapper
+    cd src/v8wrapper
 
     if [ "$PLATFORM" = "macosx" ]; then
         make -f Makefile.$PLATFORM clean all
 
-        cp libv8wrapper.dylib ../build/native/macosx/x86_64
-        install_name_tool -id libv8wrapper.dylib ../build/native/macosx/x86_64/libv8wrapper.dylib
+        cp libv8wrapper.dylib ../../build/native/macosx/x86_64
+        install_name_tool -id libv8wrapper.dylib ../../build/native/macosx/x86_64/libv8wrapper.dylib
 
     else
         make -f Makefile.$PLATFORM clean all
-        cp libv8wrapper.so ../build/native/linux/x86_64
+        cp libv8wrapper.so ../../build/native/linux/x86_64
 
         make -f Makefile.$PLATFORM.32 clean all
-        cp libv8wrapper.so ../build/native/linux/x86
+        cp libv8wrapper.so ../../build/native/linux/x86
     fi
 }
 
@@ -82,11 +86,10 @@ detect
 
 echo "==== Cleaning up ===="
 create_output_dirs
- 
+
 # echo "==== Building V8 ===="
 (build_v8)
 (copy_v8)
- 
+
 echo "==== Building V8W ===="
 (build_and_copy_v8w)
- 
