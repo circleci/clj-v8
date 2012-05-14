@@ -28,12 +28,12 @@ function detect {
 }
 
 function build_v8 {
-    if [[ -e "v8" ]]; then
-        cd v8
+    if [[ -e "src/v8" ]]; then
+        cd src/v8
         git pull
     else
-        git clone git://github.com/v8/v8.git v8
-        cd v8
+        git clone git://github.com/v8/v8.git src/v8
+        cd src/v8
     fi
 
     make dependencies
@@ -72,12 +72,12 @@ function build_and_copy_v8w {
 
 function copy_v8 {
     if [ "$PLATFORM" = "macosx" ]; then
-        cp v8/out/x64.release/libv8.dylib ./build/native/macosx/x86_64/
+        cp src/v8/out/x64.release/libv8.dylib ./build/native/macosx/x86_64/
         install_name_tool -id libv8.dylib ./build/native/macosx/x86_64/libv8.dylib
 
     else
-        cp v8/out/x64.release/lib.target/libv8.so ./build/native/linux/x86_64/
-        cp v8/out/ia32.release/lib.target/libv8.so ./build/native/linux/x86/
+        cp src/v8/out/x64.release/lib.target/libv8.so ./build/native/linux/x86_64/
+        cp src/v8/out/ia32.release/lib.target/libv8.so ./build/native/linux/x86/
     fi
 }
 
