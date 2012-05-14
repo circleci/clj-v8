@@ -17,16 +17,17 @@ char *run(const char *jssrc)
   Handle<Value> v = script->Run();
   char* result;
 
-  if (v.isEmpty())
+  if (v.IsEmpty())
   {
-    String::Utf8Value utf8(v);
-    result = strdup(*v);
+    String::AsciiValue ascii(v);
+    result = strdup(*ascii);
   } else {
-    result = strdup("Fail");
+    Handle<Value> exception = try_catch.Exception();
+    String::AsciiValue exception_str(exception);
+    result = strdup(*exception_str);
   }
 
   context.Dispose();
-  V8::dispose();
 
   return result;
 }
