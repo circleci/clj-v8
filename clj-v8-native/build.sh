@@ -1,8 +1,6 @@
 #!/bin/bash
 
 function create_output_dirs {
-    rm -rf build
-
     mkdir -p build/lib
     mkdir -p build/native/{macosx,linux}
     mkdir -p build/native/macosx/x86_64
