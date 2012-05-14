@@ -1,1 +1,2 @@
 /clj-v8-native/*.jar
+/clj-v8-native/src/v8/
