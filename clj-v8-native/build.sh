@@ -38,7 +38,10 @@ function build_v8 {
 
     if [ "$PLATFORM" = "macosx" ]; then
         echo Building Mac OS X 64 bit
-        patch -p1 < ../osx-arch.diff
+        
+        # This doesn't seem to be required any more, ivans, 20120612
+        # patch -p1 < ../osx-arch.diff
+
         make library=shared x64.release
 
     else

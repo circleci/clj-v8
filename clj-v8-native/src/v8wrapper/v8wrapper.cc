@@ -17,10 +17,13 @@ char *run(const char *jssrc)
   Handle<Value> v = script->Run();
   char* result;
 
+  printf("\nI'M ALIVE\n");
+
   if (v.IsEmpty())
   {
     String::AsciiValue ascii(v);
     result = strdup(*ascii);
+    
   } else {
     Handle<Value> exception = try_catch.Exception();
     String::AsciiValue exception_str(exception);
