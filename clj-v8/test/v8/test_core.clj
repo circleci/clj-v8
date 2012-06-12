@@ -11,8 +11,8 @@
 (fact "complex code works"
   (v8/run-script "(function(){ return 5; })();") => "5")
 
-  (comment
+(fact "Unicode won't ☔ on my parade"
+  (v8/run-script "\"šećiđon\"") => "šećiđon")
+
 (fact "syntax error doesnt die"
   (v8/run-script "sjd2-23=dfv;2-") => "")
-
-)
