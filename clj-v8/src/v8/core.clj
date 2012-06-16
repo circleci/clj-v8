@@ -5,4 +5,5 @@
 (defn run-script
   "Compiles and runs a JS file"
   [script]
-  (.toString ((jna/jna-fn WString v8wrapper/run) script)))
+  (let [result ((jna/jna-fn WString v8wrapper/run) script)]
+       (if (nil? result) nil (.toString result))))

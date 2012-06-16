@@ -14,7 +14,5 @@
 (fact "Unicode won't ☔ on my parade"
   (v8/run-script "\"šećiđon☔\"") => "šećiđon☔")
   
-(comment
 (fact "syntax error doesnt die"
-  (v8/run-script "sjd2-23=dfv;2-") => "")
-)
+  (v8/run-script "sjd2-23=dfv;2-") => nil)
