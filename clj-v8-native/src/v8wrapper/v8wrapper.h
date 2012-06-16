@@ -5,7 +5,7 @@
 extern "C" {
 #endif
     // compiles and executes javascript and returns the script return value as string
-    char *run(const char *js);
+    const wchar_t *run(const char *js);
 
 #ifdef __cplusplus
 }
