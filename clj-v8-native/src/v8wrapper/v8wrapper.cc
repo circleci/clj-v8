@@ -8,7 +8,7 @@
 
 using namespace v8;
 
-const wchar_t *run(const char *jssrc)
+const wchar_t *run(const wchar_t *jssrc)
 {
   TryCatch try_catch;
   HandleScope handle_scope;
@@ -16,7 +16,17 @@ const wchar_t *run(const char *jssrc)
   Persistent<Context> context = Context::New();
   Context::Scope context_scope(context);
 
-  Handle<Script> script = Script::Compile(String::New(jssrc));
+  uint16_t *jsu16 = (uint16_t*) calloc(sizeof(uint16_t), wcslen(jssrc));
+
+  // Copy input parameter
+  {
+    uint16_t *dst = jsu16;
+    const wchar_t *src = jssrc;
+
+    while (*dst++ = *src++) {}
+  }
+
+  Handle<Script> script = Script::Compile(String::New(jsu16));
 
   if (*script != NULL) {
     Handle<Value> v = script->Run();
