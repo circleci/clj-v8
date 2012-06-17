@@ -127,6 +127,8 @@ Combine that jar file with the pom.xml located in the resources
 directory and you will be able to upload this to Clojars or any other
 similar service.
 
+Author
+--------
 
-Running an example
-------------------
+clj-v8 and clj-v8-wrapper have been developed by Ivan Stojic
+<ivans@ordecon.com>. The project was funded by CircleCi.
