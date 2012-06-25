@@ -59,8 +59,8 @@ function build_and_copy_v8w {
     if [ "$PLATFORM" = "macosx" ]; then
         make -f Makefile.$PLATFORM clean all
 
+        #install_name_tool -id libv8wrapper.dylib ../../build/native/macosx/x86_64/libv8wrapper.dylib
         cp libv8wrapper.dylib ../../build/native/macosx/x86_64
-        install_name_tool -id libv8wrapper.dylib ../../build/native/macosx/x86_64/libv8wrapper.dylib
 
     else
         make -f Makefile.$PLATFORM clean all
