@@ -1,4 +1,4 @@
-(defproject clj-v8 "0.1.0"
+(defproject clj-v8 "0.1.1"
   :description "A Clojure wrapper for the v8 Javascript library"
   :dependencies [[org.clojure/clojure "1.3.0"]
                  [org.clojars.elmom/clojure-jna "0.9"]
