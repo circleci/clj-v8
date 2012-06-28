@@ -18,4 +18,5 @@ clean:
 
 $(TARGET): $(OBJECTS)
 	ld $(LDFLAGS) $(OBJECTS) -o $(TARGET)
+	install_name_tool -change `greadlink -f $(V8_LIB)/libv8.dylib` @loader_path/libv8.dylib $(TARGET)
 
