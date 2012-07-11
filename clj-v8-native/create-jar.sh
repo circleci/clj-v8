@@ -1,4 +1,6 @@
 #!/bin/bash
 
-rm -f clj-v8-native-0.1.1.jar
-jar -cMf clj-v8-native-0.1.1.jar -C build/ lib -C build native pom.xml
+VERSION=`grep '<version>' pom.xml | sed -Ee 's#.*<version>(.*)</version>.*#\1#'`
+
+rm -f clj-v8-native-$VERSION.jar
+jar -cMf clj-v8-native-$VERSION.jar -C build/ lib -C build native pom.xml
