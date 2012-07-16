@@ -44,8 +44,11 @@ wchar_t *run(wchar_t *jssrc) {
     }
   }
 
-  
   Handle<Script> script = Script::Compile(String::New(jsu16));
+
+  // After compiling the script, free the temporary buffer we used to load
+  // the script from wchar_t to uint16_t or we'll leak it.
+  free(jsu16);
 
   if (*script != NULL) {
     TryCatch trycatch;
@@ -74,4 +77,11 @@ wchar_t *run(wchar_t *jssrc) {
   }
 
   return NULL;
+}
+
+
+int cleanup(void *lastresult) {
+  free(lastresult);
+
+  return 0;
 }
