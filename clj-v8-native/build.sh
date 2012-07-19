@@ -42,14 +42,14 @@ function build_v8 {
         # This doesn't seem to be required any more, ivans, 20120612
         # patch -p1 < ../osx-arch.diff
 
-        make library=shared x64.release
+        make debuggersupport=off library=shared x64.release
 
     else
         echo Building Linux 32 bit
-        make library=shared ia32.release
+        make debuggersupport=off library=shared ia32.release
 
         echo Building Linux 64 bit
-        make library=shared x64.release
+        make debuggersupport=off library=shared x64.release
     fi
 }
 
