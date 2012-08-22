@@ -24,12 +24,39 @@ wchar_t *fromValue(Handle<Value> v) {
 }
 
 
-wchar_t *run(wchar_t *jssrc) {
-  HandleScope handle_scope;
-  Persistent<Context> context = Context::New();
+wchar_t *run_scoped(Persistent<Context> context, uint16_t *src) {
+  HandleScope handle_scope;  
   Context::Scope context_scope(context);
+  
+  Handle<Script> script = Script::Compile(String::New(src));
 
-  uint16_t *jsu16 = (uint16_t*) calloc(sizeof(uint16_t), wcslen(jssrc));
+  Handle<Value> executionresult;
+  wchar_t *result = NULL;
+
+  if (*script != NULL) {
+    TryCatch trycatch;
+    executionresult = script->Run();
+
+    if (!executionresult.IsEmpty()) {
+      result = fromValue(executionresult);
+      errno = 0;
+
+    } else {
+      executionresult = trycatch.Exception();
+      result = fromValue(executionresult);
+
+      errno = -69;
+    }
+  }
+
+  return result;
+}
+
+
+wchar_t *run(wchar_t *jssrc) {
+  Persistent<Context> context = Context::New();
+
+  uint16_t *jsu16 = (uint16_t*) calloc(sizeof(uint16_t), wcslen(jssrc) + 1);
 
   // Copy input parameter
   {
@@ -38,40 +65,25 @@ wchar_t *run(wchar_t *jssrc) {
 
     int count = 0;
     
-    while (*src) {
-      *dst++ = *src++;
+    while (*dst++ = *src++) {
       count++;
     }
   }
 
+  wchar_t *result = run_scoped(context, jsu16);
+  context.Dispose();
   
-  Handle<Script> script = Script::Compile(String::New(jsu16));
+  // After compiling the script, free the temporary buffer we used to load
+  // the script from wchar_t to uint16_t or we'll leak it.
+  free(jsu16);
 
-  if (*script != NULL) {
-    TryCatch trycatch;
-    
-    Handle<Value> v = script->Run();
-
-    if (v.IsEmpty()) {
-      Handle<Value> exception = trycatch.Exception();
-
-      wchar_t *result = fromValue(exception);
-
-      // magic vs more magic
-      context.Dispose();
-      errno = -69;
-
-      return result;
-      
-    } else {
-      wchar_t *result = fromValue(v);
-
-      context.Dispose();
-      errno = 0;
-      
-      return result;
-    }
-  }
-
-  return NULL;
+  return result;
 }
+
+
+int cleanup(void *lastresult) {
+  free(lastresult);
+
+  return 0;
+}
+
