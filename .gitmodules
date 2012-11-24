@@ -1,0 +1,3 @@
+[submodule "clj-v8-native/v8"]
+	path = clj-v8-native/v8
+	url = https://github.com/v8/v8
