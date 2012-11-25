@@ -26,19 +26,12 @@ function detect {
 }
 
 function build_v8 {
-    if [[ -e "src/v8" ]]; then
-        cd src/v8
-        git pull
-    else
-        git clone git://github.com/v8/v8.git src/v8
-        cd src/v8
-    fi
-
+    cd src/v8
     make dependencies
 
     if [ "$PLATFORM" = "macosx" ]; then
         echo Building Mac OS X 64 bit
-        
+
         # This doesn't seem to be required any more, ivans, 20120612
         # patch -p1 < ../osx-arch.diff
 
