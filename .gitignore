@@ -2,3 +2,4 @@
 /clj-v8-native/src/v8/
 /clj-v8-native/src/v8wrapper/v8wrapper.o
 /clj-v8-native/src/v8wrapper/libv8wrapper.dylib
+/clj-v8-native/src/v8wrapper/test
