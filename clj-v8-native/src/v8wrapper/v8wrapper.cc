@@ -142,31 +142,37 @@ Handle<Value> run_scoped(Persistent<Context> context, Handle<String> src) {
 
 
 wchar_t *run(wchar_t *jssrc) {
-  HandleScope handle_scope;
+  v8::Isolate* isolate = v8::Isolate::New();
+  v8::Locker locker(isolate);
+  {
+    v8::Isolate::Scope iso_scope(isolate);
 
-  // add readLine
-  Handle<ObjectTemplate> global = ObjectTemplate::New();
-  global->Set(String::New("readFile"), FunctionTemplate::New(Read));
+    v8::HandleScope handle_scope;
 
-  // init context
-  Persistent<Context> context = Context::New(NULL, global);
-  Context::Scope context_scope(context);
+    // add readLine
+    Handle<ObjectTemplate> global = ObjectTemplate::New();
+    global->Set(String::New("readFile"), FunctionTemplate::New(Read));
 
-  // convert input
-  uint16_t* src32 = wchar2uint16(jssrc);
-  Handle<String> srcv8 = String::New(src32);
+    // init context
+    Persistent<Context> context = Context::New(NULL, global);
+    Context::Scope context_scope(context);
 
-  // run
-  Handle<Value> result = run_scoped(context, srcv8);
+    // convert input
+    uint16_t* src32 = wchar2uint16(jssrc);
+    Handle<String> srcv8 = String::New(src32);
 
-  // convert output
-  wchar_t* result_str = val2wchar(result);
+    // run
+    Handle<Value> result = run_scoped(context, srcv8);
 
-  // cleanup
-  context.Dispose();
-  free(src32);
+    // convert output
+    wchar_t* result_str = val2wchar(result);
 
-  return result_str;
+    // cleanup
+    context.Dispose();
+    free(src32);
+
+    return result_str;
+  }
 }
 
 

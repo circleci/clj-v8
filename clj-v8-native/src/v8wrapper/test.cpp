@@ -24,18 +24,12 @@ v8::Handle<v8::Value> Print(v8::Handle<v8::Value>& arg) {
 }
 
 void run_v8() {
-  v8::Isolate* isolate = v8::Isolate::New();
-  v8::Locker locker(isolate);
-  {
-    v8::Isolate::Scope iso_scope(isolate);
+  v8::HandleScope handle_scope;
 
-    v8::HandleScope handle_scope;
+  v8::Handle<v8::String> source = ReadFile("test_file.js");
 
-    v8::Handle<v8::String> source = ReadFile("test_file.js");
-
-    wchar_t* result = run(val2wchar(source));
-    v8::Handle<v8::Value> resstr = v8::String::New(wchar2uint16(result));
-  }
+  wchar_t* result = run(val2wchar(source));
+  v8::Handle<v8::Value> resstr = v8::String::New(wchar2uint16(result));
 }
 
 int main()
