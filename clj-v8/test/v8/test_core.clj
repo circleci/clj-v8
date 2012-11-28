@@ -5,6 +5,9 @@
 (fact "run-script works"
   (v8/run-script "123") => "123")
 
+(fact "run-script works"
+  (v8/run-script "readFile('test/v8/test.txt');") => "123\n")
+
 (fact "simple expressions"
   (v8/run-script "3/0") => "Infinity")
 
@@ -13,6 +16,6 @@
 
 (fact "Unicode won't ☔ on my parade"
   (v8/run-script "\"šećiđon☔\"") => "šećiđon☔")
-  
+
 (fact "syntax error doesnt die"
-  (v8/run-script "sjd2-23=dfv;2-") => nil)
+  (v8/run-script "sjd2-23=dfv;2-") => (throws Exception))
