@@ -23,7 +23,7 @@ $(TARGET): $(OBJECTS) Makefile.macosx
 
 test: $(TARGET) test.cpp Makefile.macosx
 	$(CC) $(CFLAGS) -ggdb3 test.cpp -o test.o
-	$(CC) -L$(V8_LIB) -ggdb3 -lv8 -lc -lstdc++ libv8wrapper.dylib test.o -o ./test
+	$(CC) -L$(V8_LIB) -ggdb3 -lv8 -lc -lstdc++ -lboost_thread-mt -lboost_system-mt libv8wrapper.dylib test.o -o ./test
 
 check: test
 	./test

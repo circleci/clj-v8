@@ -5,17 +5,16 @@
 #include <v8.h>
 #include <string.h>
 #include "v8wrapper.h"
+#include <boost/thread.hpp>
 
-using namespace v8;
-using namespace std;
 
-Handle<String> ReadFile(const char* name);
-const char* ToCString(const String::Utf8Value& value);
-wchar_t *val2wchar(const Handle<Value> v);
+v8::Handle<v8::String> ReadFile(const char* name);
+const char* ToCString(const v8::String::Utf8Value& value);
+wchar_t *val2wchar(const v8::Handle<v8::Value> v);
 uint16_t* wchar2uint16(wchar_t* w);
 
-Handle<Value> Print(Handle<Value>& arg) {
-  String::Utf8Value str(arg);
+v8::Handle<v8::Value> Print(v8::Handle<v8::Value>& arg) {
+  v8::String::Utf8Value str(arg);
   const char* cstr = ToCString(str);
   printf("%s", cstr);
 
@@ -24,12 +23,35 @@ Handle<Value> Print(Handle<Value>& arg) {
   return v8::Undefined();
 }
 
+void run_v8() {
+  v8::Isolate* isolate = v8::Isolate::New();
+  v8::Locker locker(isolate);
+  {
+    v8::Isolate::Scope iso_scope(isolate);
+
+    v8::HandleScope handle_scope;
+
+    v8::Handle<v8::String> source = ReadFile("test_file.js");
+
+    wchar_t* result = run(val2wchar(source));
+    v8::Handle<v8::Value> resstr = v8::String::New(wchar2uint16(result));
+  }
+}
+
 int main()
 {
-  HandleScope handle_scope;
-  Handle<String> source = ReadFile("test_file.js");
+  int count = 20;
+  v8::V8::Initialize();
 
-  wchar_t* result = run(val2wchar(source));
-  Handle<Value> resstr = String::New(wchar2uint16(result));
-  Print(resstr);
+  boost::thread ts[count];
+
+  for (int i = 0; i < count; i++) {
+    printf("starting thread %i\n", i);
+    ts[i] = boost::thread(run_v8);
+  }
+
+  for (int i = 0; i < count; i++) {
+    ts[i].join();
+    printf("ending thread %i\n", i);
+  }
 }
