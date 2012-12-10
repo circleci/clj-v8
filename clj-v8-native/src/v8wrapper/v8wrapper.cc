@@ -103,20 +103,26 @@ wchar_t *val2wchar(const Handle<Value> v) {
   return result;
 }
 
-uint16_t* wchar2uint16(wchar_t* w) {
-
-  int length = wcslen(w) + 1;
-  uint16_t *result = (uint16_t*) calloc(sizeof(uint16_t), length);
+Handle<String> wchar2v8string(wchar_t* w) {
+  int length = wcslen(w);
+  uint16_t *u16 = (uint16_t*) calloc(length+1, sizeof(uint16_t));
 
   for(int i = 0; i < length; i++) {
-    result[i] = w[i];
+    u16[i] = w[i];
   }
+
+  Handle<String> result = String::New(u16);
+  free(u16);
+
   return result;
 }
 
 
 
 Handle<Value> run_scoped(Persistent<Context> context, Handle<String> src) {
+  Context::Scope context_scope(context);
+  v8::HandleScope handle_scope;
+
   TryCatch trycatch;
   Handle<Value> result;
 
@@ -139,40 +145,53 @@ Handle<Value> run_scoped(Persistent<Context> context, Handle<String> src) {
   return result;
 }
 
+Persistent<Context> createContext ()
+{
+  v8::HandleScope handle_scope;
+  Local<ObjectTemplate> global;
+
+  // add readFile
+  global = ObjectTemplate::New();
+  global->Set(String::New("readFile"), FunctionTemplate::New(Read));
+
+  // init context
+  return Context::New(NULL, global);
+}
+
+struct _v8stack {
+  v8::Isolate* isolate;
+};
+typedef struct _v8stack v8stack;
+
+v8stack* createNewContext() {
+  v8stack* stack = new v8stack;
+  stack->isolate = v8::Isolate::New();
+}
 
 
 wchar_t *run(wchar_t *jssrc) {
+
+  // convert input
+  wchar_t* result_str = NULL;
+
   v8::Isolate* isolate = v8::Isolate::New();
-  v8::Locker locker(isolate);
   {
-    v8::Isolate::Scope iso_scope(isolate);
+     v8::Locker locker(isolate);
+     v8::Isolate::Scope iso_scope(isolate);
 
-    v8::HandleScope handle_scope;
-
-    // add readLine
-    Handle<ObjectTemplate> global = ObjectTemplate::New();
-    global->Set(String::New("readFile"), FunctionTemplate::New(Read));
-
-    // init context
-    Persistent<Context> context = Context::New(NULL, global);
-    Context::Scope context_scope(context);
-
-    // convert input
-    uint16_t* src32 = wchar2uint16(jssrc);
-    Handle<String> srcv8 = String::New(src32);
-
-    // run
-    Handle<Value> result = run_scoped(context, srcv8);
-
-    // convert output
-    wchar_t* result_str = val2wchar(result);
-
-    // cleanup
-    context.Dispose();
-    free(src32);
-
-    return result_str;
+     // run
+     Persistent<Context> context = createContext();
+     {
+       v8::HandleScope handle_scope;
+       Handle<String> src = wchar2v8string(jssrc);
+       Handle<Value> result = run_scoped(context, src);
+       result_str = val2wchar(result);
+     }
+     context.Dispose();
   }
+  isolate->Dispose();
+
+  return result_str;
 }
 
 
