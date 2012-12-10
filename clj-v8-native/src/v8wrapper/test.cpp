@@ -36,7 +36,7 @@ void run_v8() {
     return;
 
   // convert to 16 bit chars
-  wchar_t* source16 = (wchar_t*)(calloc(size, 4)); // not sure why 4, segfaults with 2
+  wchar_t* source16 = (wchar_t*)(calloc(size+1, 4));
   for (int i = 0; i < size; i++) {
     source16[i] = (wchar_t)(source8[i]);
   }
