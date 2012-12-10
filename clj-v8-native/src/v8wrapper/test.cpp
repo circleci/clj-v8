@@ -42,13 +42,19 @@ void run_v8() {
   }
   free(source8);
 
+  // get a tuple to use
+  v8tuple* tuple = create_tuple();
+
   // run test
-  wchar_t* result = run(source16);
+  wchar_t* result = run(tuple, source16);
   free(source16);
+
+  cleanup_tuple(tuple);
 
   wchar_t format_str[3] = {(wchar_t)('%'), (wchar_t)('S'), (wchar_t)('\0')};
   wprintf(format_str, result);
-  free(result);
+  cleanup(result);
+
 }
 
 int main()

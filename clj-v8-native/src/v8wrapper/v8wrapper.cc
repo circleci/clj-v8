@@ -119,8 +119,7 @@ Handle<String> wchar2v8string(wchar_t* w) {
 
 
 
-Handle<Value> run_scoped(Persistent<Context> context, Handle<String> src) {
-  Context::Scope context_scope(context);
+Handle<Value> run_scoped(Handle<String> src) {
   v8::HandleScope handle_scope;
 
   TryCatch trycatch;
@@ -145,10 +144,12 @@ Handle<Value> run_scoped(Persistent<Context> context, Handle<String> src) {
   return result;
 }
 
-Persistent<Context> createContext ()
+Persistent<Context> createContext (v8::Isolate* isolate)
 {
+  v8::Locker locker(isolate);
+  v8::Isolate::Scope iso_scope(isolate);
   v8::HandleScope handle_scope;
-  Local<ObjectTemplate> global;
+  Handle<ObjectTemplate> global;
 
   // add readFile
   global = ObjectTemplate::New();
@@ -158,45 +159,52 @@ Persistent<Context> createContext ()
   return Context::New(NULL, global);
 }
 
-struct _v8stack {
+struct _v8tuple {
   v8::Isolate* isolate;
+  v8::Persistent<v8::Context> context;
 };
-typedef struct _v8stack v8stack;
 
-v8stack* createNewContext() {
-  v8stack* stack = new v8stack;
-  stack->isolate = v8::Isolate::New();
+
+v8tuple* create_tuple() {
+  v8tuple* tuple = new v8tuple;
+  tuple->isolate = v8::Isolate::New();
+  tuple->context = createContext(tuple->isolate);
+  return tuple;
 }
 
 
-wchar_t *run(wchar_t *jssrc) {
+wchar_t *run(v8tuple* tuple, wchar_t *jssrc) {
 
   // convert input
   wchar_t* result_str = NULL;
-
-  v8::Isolate* isolate = v8::Isolate::New();
   {
-     v8::Locker locker(isolate);
-     v8::Isolate::Scope iso_scope(isolate);
-
+     v8::Locker locker(tuple->isolate);
+     v8::Isolate::Scope iso_scope(tuple->isolate);
      // run
-     Persistent<Context> context = createContext();
      {
+       Context::Scope context_scope(tuple->context);
        v8::HandleScope handle_scope;
        Handle<String> src = wchar2v8string(jssrc);
-       Handle<Value> result = run_scoped(context, src);
+       Handle<Value> result = run_scoped(src);
        result_str = val2wchar(result);
      }
-     context.Dispose();
   }
-  isolate->Dispose();
 
   return result_str;
 }
 
 
-int cleanup(void *lastresult) {
-  free(lastresult);
+int cleanup_tuple(v8tuple* tuple) {
+  {
+    v8::Locker locker(tuple->isolate);
+    v8::Isolate::Scope iso_scope(tuple->isolate);
+    tuple->context.Dispose();
+  }
+  tuple->isolate->Dispose();
+  return 0;
+}
 
+int cleanup(void* lastresult) {
+  free(lastresult);
   return 0;
 }
