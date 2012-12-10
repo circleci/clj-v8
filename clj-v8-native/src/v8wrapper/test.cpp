@@ -66,4 +66,6 @@ int main()
     ts[i].join();
     printf("ending thread %i\n", i);
   }
+
+  return 0;
 }
