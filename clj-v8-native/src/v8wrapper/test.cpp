@@ -46,14 +46,14 @@ void run_v8() {
   wchar_t* result = run(source16);
   free(source16);
 
-  wchar_t format_str[2] = {(wchar_t)('%'), (wchar_t)('S')};
+  wchar_t format_str[3] = {(wchar_t)('%'), (wchar_t)('S'), (wchar_t)('\0')};
   wprintf(format_str, result);
   free(result);
 }
 
 int main()
 {
-  int count = 20;
+  int count = 1;
 
   boost::thread ts[count];
 
