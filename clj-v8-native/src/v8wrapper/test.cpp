@@ -53,7 +53,7 @@ void run_v8() {
 
 int main()
 {
-  int count = 1;
+  int count = 20;
 
   boost::thread ts[count];
 
