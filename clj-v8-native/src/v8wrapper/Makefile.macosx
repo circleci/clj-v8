@@ -11,7 +11,7 @@ TARGET=libv8wrapper.dylib
 all: $(TARGET)
 
 clean:
-	rm -f *.o $(TARGET)
+	rm -f *.o *.so *.dylib
 
 .cc.o:
 	$(CC) $(CFLAGS) $< -o $@
