@@ -2,40 +2,58 @@
 #include <iostream>
 #include <wchar.h>
 #include <errno.h>
-#include <v8.h>
 #include <string.h>
 #include "v8wrapper.h"
 #include <boost/thread.hpp>
 
 
-v8::Handle<v8::String> ReadFile(const char* name);
-const char* ToCString(const v8::String::Utf8Value& value);
-wchar_t *val2wchar(const v8::Handle<v8::Value> v);
-uint16_t* wchar2uint16(wchar_t* w);
+// returns size, chars as an output parameter
+long read(const char* name, char** result) {
+  FILE* file = fopen(name, "rb");
+  if (file == NULL) return -1;
 
-v8::Handle<v8::Value> Print(v8::Handle<v8::Value>& arg) {
-  v8::String::Utf8Value str(arg);
-  const char* cstr = ToCString(str);
-  printf("%s", cstr);
+  fseek(file, 0, SEEK_END);
+  int size = ftell(file);
+  rewind(file);
 
-  printf("\n");
-  fflush(stdout);
-  return v8::Undefined();
+  char* chars = new char[size + 1];
+  chars[size] = '\0';
+  for (int i = 0; i < size;) {
+    int read = static_cast<int>(fread(&chars[i], 1, size - i, file));
+    i += read;
+  }
+  fclose(file);
+  *result = chars;
+  return size;
 }
 
+
 void run_v8() {
-  v8::HandleScope handle_scope;
+  // read file
+  char* source8 = NULL;
+  long size = read("test_file.js", &source8);
+  if (source8 == NULL or size == -1)
+    return;
 
-  v8::Handle<v8::String> source = ReadFile("test_file.js");
+  // convert to 16 bit chars
+  wchar_t* source16 = (wchar_t*)(calloc(size, 4)); // not sure why 4, segfaults with 2
+  for (int i = 0; i < size; i++) {
+    source16[i] = (wchar_t)(source8[i]);
+  }
+  free(source8);
 
-  wchar_t* result = run(val2wchar(source));
-  v8::Handle<v8::Value> resstr = v8::String::New(wchar2uint16(result));
+  // run test
+  wchar_t* result = run(source16);
+  free(source16);
+
+  wchar_t format_str[2] = {(wchar_t)('%'), (wchar_t)('S')};
+  wprintf(format_str, result);
+  free(result);
 }
 
 int main()
 {
   int count = 20;
-  v8::V8::Initialize();
 
   boost::thread ts[count];
 
