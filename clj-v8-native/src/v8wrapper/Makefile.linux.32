@@ -2,11 +2,14 @@ V8_INC=../v8/include
 V8_LIB=../v8/out/ia32.release/lib.target
 
 CC=g++
-CFLAGS=-c -m32 -fPIC -I$(V8_INC)
-LDFLAGS=-shared -m elf_i386 -L$(V8_LIB) -lv8 -lc
+CFLAGS=-c -m32 -fPIC -I$(V8_INC) -Wall
+COMMON_LDFLAGS=-Wl,--rpath -Wl,. -L. -L$(V8_LIB) -lv8 -m32
+LIBRARY_LDFLAGS=-shared $(COMMON_LDFLAGS)
 SOURCES=v8wrapper.cc
 OBJECTS=$(SOURCES:.cc=.o)
 TARGET=libv8wrapper.so
+MAKEFILES=Makefile.macosx Makefile.linux Makefile.linux.32
+
 
 all: $(TARGET)
 	
@@ -16,6 +19,14 @@ clean:
 .cc.o:
 	$(CC) $(CFLAGS) $< -o $@
 
-$(TARGET): $(OBJECTS)
-	ld $(LDFLAGS) $(OBJECTS) -o $(TARGET)
+$(TARGET): $(OBJECTS) $(MAKEFILES)
+	$(CC) -o $(TARGET) $(OBJECTS) $(LIBRARY_LDFLAGS)
 
+test: $(TARGET) test.cpp $(MAKEFILES)
+	$(CC) $(CFLAGS) -ggdb3 test.cpp -o test.o
+	ln -s $(V8_LIB)/libv8.so
+	$(CC) -o ./test test.o $(TARGET) -ggdb3 $(COMMON_LDFLAGS) -lboost_thread-mt -lboost_system-mt
+
+
+check: test
+	./test
