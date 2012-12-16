@@ -8,18 +8,32 @@
 (def create-tuple-fn (.getFunction LIBRARY "create_tuple"))
 (def cleanup-tuple-fn (.getFunction LIBRARY "cleanup_tuple"))
 
-(defn run-script
-  "Compiles and runs a JS file"
-  [script]
-  (let [tuple (.invokePointer create-tuple-fn (into-array []))
-        result (.invoke run-fn Memory (object-array [tuple (new WString script)]))
-        strresult (if (nil? result) nil (.getString result 0 true))]
+(defn create-context
+  "Creates a V8 context and associated structures"
+  []
+  (.invokePointer create-tuple-fn (into-array [])))
 
-    ;; result will be cleaned up by the finalizer, hopefully
+(defn run-script-in-context
+  "Compile and run a JS script within the given context"
+  [cx script]
+  (let [result (.invoke run-fn Memory (object-array [cx (new WString script)]))
+        strresult (if (nil? result) nil (.getString result 0 true))]
     (when (not= (. Native getLastError) 0)
-      (.invokeVoid cleanup-tuple-fn (into-array [tuple]))
       (if (nil? result)
         (throw (Exception. "V8 reported error, but message is null!"))
         (throw (Exception. (str "V8 error: " strresult)))))
-    (.invokeVoid cleanup-tuple-fn (into-array [tuple]))
     strresult))
+
+(defn cleanup-context
+  "Cleans the memory from a context"
+  [cx]
+  (.invokeVoid cleanup-tuple-fn (into-array [cx])))
+
+(defn run-script
+  "Compiles and runs a JS file"
+  [script]
+  (let [cx (create-context)]
+    (try
+      (run-script-in-context cx script)
+      (finally
+       (cleanup-context cx)))))

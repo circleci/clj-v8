@@ -22,3 +22,9 @@
 
 (fact "multuple scripts in parallel work"
   (pmap v8/run-script (repeat 20 "(function(){ return 5; })();")) => (repeat 20 "5"))
+
+(fact "running two scripts on same context"
+  (let [cx (v8/create-context)]
+    (v8/run-script-in-context cx "x = 17; y = {a: 6};")
+    (v8/run-script-in-context cx "x;") => "17"
+    (v8/run-script-in-context cx "y.a;") => "6"))
