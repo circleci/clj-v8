@@ -4,4 +4,5 @@
                  [org.clojars.elmom/clojure-jna "0.9"]
                  [clj-v8-native/clj-v8-native "0.1.3"]]
   :dev-dependencies [[midje "1.3.1"]]
-  :jvm-opts ["-Djna.library.path=native/macosx/x86_64:native/linux/x86_64:native/linux/x86:"])
+  :profiles {:dev {:dependencies [[midje "1.3.1" :exclusions [org.clojure/clojure]]]}}
+  :jvm-opts ["-Djna.library.path=target/native/macosx/x86_64:target/native/linux/x86_64:target/native/linux/x86:native/macosx/x86_64:native/linux/x86_64:native/linux/x86:"])
