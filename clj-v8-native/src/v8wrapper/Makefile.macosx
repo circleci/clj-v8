@@ -24,7 +24,7 @@ $(V8): $(MAKEFILES)
 
 $(TARGET): $(OBJECTS) $(MAKEFILES) $(V8)
 	$(CC) -o $(TARGET) $(OBJECTS) $(LIBRARY_LDFLAGS)
-
+	install_name_tool -change $(V8) @loader_path/$(V8) $(TARGET)
 
 test: $(TARGET) test.cpp $(MAKEFILES)
 	$(CC) $(CFLAGS) -ggdb3 test.cpp -o test.o
