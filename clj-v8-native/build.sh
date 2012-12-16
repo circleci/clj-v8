@@ -31,12 +31,7 @@ function build_v8 {
 
     if [ "$PLATFORM" = "macosx" ]; then
         echo Building Mac OS X 64 bit
-
-        # This doesn't seem to be required any more, ivans, 20120612
-        # patch -p1 < ../osx-arch.diff
-
         make debuggersupport=off library=shared x64.release
-
     else
         echo Building Linux 32 bit
         make debuggersupport=off library=shared ia32.release
@@ -52,38 +47,30 @@ function build_and_copy_v8w {
     if [ "$PLATFORM" = "macosx" ]; then
         make -f Makefile.$PLATFORM clean all
 
-        #install_name_tool -id libv8wrapper.dylib ../../build/native/macosx/x86_64/libv8wrapper.dylib
+        echo "=== Copying v8wrapper and v8 === "
         cp libv8wrapper.dylib ../../build/native/macosx/x86_64
-
+        cp libv8-clj-v8.dylib ../../build/native/macosx/x86_64/
     else
         make -f Makefile.$PLATFORM clean all
+        echo "=== Copying v8wrapper and v8 (64bit) === "
         cp libv8wrapper.so ../../build/native/linux/x86_64
+        cp libv8-clj-v8.so ../../build/native/linux/x86_64/
 
         make -f Makefile.$PLATFORM.32 clean all
+        echo "=== Copying v8wrapper and v8 (32bit) === "
         cp libv8wrapper.so ../../build/native/linux/x86
-    fi
-}
-
-function copy_v8 {
-    if [ "$PLATFORM" = "macosx" ]; then
-        cp src/v8/out/x64.release/libv8.dylib ./build/native/macosx/x86_64/
-        install_name_tool -id libv8.dylib ./build/native/macosx/x86_64/libv8.dylib
-
-    else
-        cp src/v8/out/x64.release/lib.target/libv8.so ./build/native/linux/x86_64/
-        cp src/v8/out/ia32.release/lib.target/libv8.so ./build/native/linux/x86/
+        cp libv8-clj-v8.so ../../build/native/linux/x86/
     fi
 }
 
 echo "==== Detecting environment ===="
 detect
 
-echo "==== Cleaning up ===="
+echo "==== Preparing ===="
 create_output_dirs
 
-# echo "==== Building V8 ===="
+echo "==== Building v8 ===="
 (build_v8)
-(copy_v8)
 
-echo "==== Building V8W ===="
+echo "==== Building v8wrapper ===="
 (build_and_copy_v8w)
