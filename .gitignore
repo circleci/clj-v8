@@ -4,3 +4,5 @@
 /clj-v8-native/src/v8wrapper/libv8wrapper.dylib
 /clj-v8-native/src/v8wrapper/test
 /clj-v8-native/src/v8wrapper/test.o
+/clj-v8-native/src/v8wrapper/libv8-clj-v8.dylib
+/clj-v8/target
