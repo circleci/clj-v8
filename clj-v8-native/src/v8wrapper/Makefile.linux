@@ -3,27 +3,31 @@ V8_LIB=../v8/out/x64.release/lib.target
 
 CC=g++
 CFLAGS=-c -fPIC -I$(V8_INC) -Wall
-COMMON_LDFLAGS=-Wl,--rpath -Wl,. -L. -L$(V8_LIB) -lv8 
+COMMON_LDFLAGS=-Wl,--rpath -Wl,. -L. -lv8-clj-v8
 LIBRARY_LDFLAGS=-shared $(COMMON_LDFLAGS)
 SOURCES=v8wrapper.cc
 OBJECTS=$(SOURCES:.cc=.o)
+V8=libv8-clj-v8.so
 TARGET=libv8wrapper.so
 
-
 all: $(TARGET)
-	
-clean:
-	rm -f *.o *.so *.dylib
 
-.cc.o:
+clean:
+	rm -f *.o *.so *.dylib test
+
+.cc.o: $(MAKEFILES)
 	$(CC) $(CFLAGS) $< -o $@
 
-$(TARGET): $(OBJECTS) $(MAKEFILES)
+# TODO: adapt to linux
+$(V8): $(MAKEFILES)
+	cp $(V8_LIB)/libv8.dylib $(V8)
+	install_name_tool -id $(V8) $(V8)
+
+$(TARGET): $(OBJECTS) $(MAKEFILES) $(DYLIB)
 	$(CC) -o $(TARGET) $(OBJECTS) $(LIBRARY_LDFLAGS)
 
-test: $(TARGET) test.cpp $(MAKEFILES)
+test: $(TARGET) test.cpp $(MAKEFILES) $(DYLIB)
 	$(CC) $(CFLAGS) -ggdb3 test.cpp -o test.o
-	ln -s $(V8_LIB)/libv8.so
 	$(CC) -o ./test test.o $(TARGET) -ggdb3 $(COMMON_LDFLAGS) -lboost_thread-mt -lboost_system-mt
 
 
