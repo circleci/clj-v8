@@ -1,30 +1,33 @@
 V8_INC=../v8/include
 V8_LIB=../v8/out/ia32.release/lib.target
+V8=libv8.so.clj-v8
 
 CC=g++
 CFLAGS=-c -m32 -fPIC -I$(V8_INC) -Wall
-COMMON_LDFLAGS=-Wl,--rpath -Wl,. -L. -L$(V8_LIB) -lv8 -m32
+COMMON_LDFLAGS=-Wl,--rpath -Wl,. -L. $(V8) -m32
 LIBRARY_LDFLAGS=-shared $(COMMON_LDFLAGS)
 SOURCES=v8wrapper.cc
 OBJECTS=$(SOURCES:.cc=.o)
 TARGET=libv8wrapper.so
 MAKEFILES=Makefile.macosx Makefile.linux Makefile.linux.32
 
-
 all: $(TARGET)
-	
-clean:
-	rm -f *.o *.so *.dylib
 
-.cc.o:
+clean:
+	rm -f *.o *.so *.dylib test
+
+.cc.o: $(MAKEFILES)
 	$(CC) $(CFLAGS) $< -o $@
 
-$(TARGET): $(OBJECTS) $(MAKEFILES)
+# use $(OBJECTS) because the filename is the same on 32bit as 64bit
+$(V8): $(MAKEFILES) $(OBJECTS)
+	cp $(V8_LIB)/$(V8) .
+
+$(TARGET): $(OBJECTS) $(MAKEFILES) $(V8)
 	$(CC) -o $(TARGET) $(OBJECTS) $(LIBRARY_LDFLAGS)
 
-test: $(TARGET) test.cpp $(MAKEFILES)
+test: $(TARGET) test.cpp $(MAKEFILES) $(V8)
 	$(CC) $(CFLAGS) -ggdb3 test.cpp -o test.o
-	ln -s $(V8_LIB)/libv8.so
 	$(CC) -o ./test test.o $(TARGET) -ggdb3 $(COMMON_LDFLAGS) -lboost_thread-mt -lboost_system-mt
 
 

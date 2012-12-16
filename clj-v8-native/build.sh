@@ -31,13 +31,13 @@ function build_v8 {
 
     if [ "$PLATFORM" = "macosx" ]; then
         echo Building Mac OS X 64 bit
-        make debuggersupport=off library=shared x64.release
+        make debuggersupport=off library=shared soname_version=clj-v8 x64.release
     else
         echo Building Linux 32 bit
-        make debuggersupport=off library=shared ia32.release
+        make debuggersupport=off library=shared soname_version=clj-v8 ia32.release
 
         echo Building Linux 64 bit
-        make debuggersupport=off library=shared x64.release
+        make debuggersupport=off library=shared soname_version=clj-v8 x64.release
     fi
 }
 
@@ -49,17 +49,17 @@ function build_and_copy_v8w {
 
         echo "=== Copying v8wrapper and v8 === "
         cp libv8wrapper.dylib ../../build/native/macosx/x86_64
-        cp libv8-clj-v8.dylib ../../build/native/macosx/x86_64/
+        cp libv8.dylib.clj-v8 ../../build/native/macosx/x86_64/
     else
         make -f Makefile.$PLATFORM clean all
         echo "=== Copying v8wrapper and v8 (64bit) === "
         cp libv8wrapper.so ../../build/native/linux/x86_64
-        cp libv8-clj-v8.so ../../build/native/linux/x86_64/
+        cp libv8.so.clj-v8 ../../build/native/linux/x86_64/
 
         make -f Makefile.$PLATFORM.32 clean all
         echo "=== Copying v8wrapper and v8 (32bit) === "
         cp libv8wrapper.so ../../build/native/linux/x86
-        cp libv8-clj-v8.so ../../build/native/linux/x86/
+        cp libv8.so.clj-v8 ../../build/native/linux/x86/
     fi
 }
 
