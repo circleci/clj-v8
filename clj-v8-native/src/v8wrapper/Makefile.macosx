@@ -15,12 +15,12 @@ all: $(TARGET)
 clean:
 	rm -f *.o *.so *.dylib test
 
-.cc.o:
+.cc.o: $(MAKEFILES)
 	$(CC) $(CFLAGS) $< -o $@
 
 $(V8): $(MAKEFILES)
 	cp $(V8_LIB)/libv8.dylib $(V8)
-	install_name_tool -id libv8-clj-v8.dylib libv8-clj-v8.dylib
+	install_name_tool -id $(V8) $(V8)
 
 $(TARGET): $(OBJECTS) $(MAKEFILES) $(V8)
 	$(CC) -o $(TARGET) $(OBJECTS) $(LIBRARY_LDFLAGS)
