@@ -1,11 +1,13 @@
 (ns v8.core
   (:require [net.n01se.clojure-jna :as jna])
-  (:import [com.sun.jna WString Native Memory NativeLibrary]))
+  (:import [com.sun.jna WString Native Memory Pointer NativeLibrary]))
 
 (def LIBRARY (com.sun.jna.NativeLibrary/getInstance "v8wrapper"))
 
-(def library-run (.getFunction LIBRARY "run"))
-(def library-cleanup (.getFunction LIBRARY "cleanup"))
+(def run-fn (.getFunction LIBRARY "run"))
+(def create-tuple-fn (.getFunction LIBRARY "create_tuple"))
+(def cleanup-tuple-fn (.getFunction LIBRARY "cleanup_tuple"))
+
 
 (def v8LockingObject (Object.))
 
@@ -13,17 +15,15 @@
   "Compiles and runs a JS file"
   [script]
   (locking v8LockingObject
-    (let [result (.invoke library-run Memory (into-array [(new WString script)]))]
-      (if (== (. Native getLastError) 0)
-        (if (nil? result)
-          nil
-          (let [strresult (.getString result 0 true)]
-            (comment (.invokeVoid library-cleanup (into-array [result])))
-            strresult))
+    (let [tuple (.invokePointer create-tuple-fn (into-array []))
+          result (.invoke run-fn Memory (object-array [tuple (new WString script)]))
+          strresult (if (nil? result) nil (.getString result 0 true))]
 
+      ;; result will be cleaned up by the finalizer, hopefully
+      (when (not= (. Native getLastError) 0)
+        (.invokeVoid cleanup-tuple-fn (into-array [tuple]))
         (if (nil? result)
           (throw (Exception. "V8 reported error, but message is null!"))
-          
-          (let [exres (Exception. (str "V8 error: " (.getString result 0 true)))]
-            (comment (.invokeVoid library-cleanup (into-array [result])))
-            (throw exres)))))))
+          (throw (Exception. (str "V8 error: " strresult)))))
+      (.invokeVoid cleanup-tuple-fn (into-array [tuple]))
+      strresult)))
