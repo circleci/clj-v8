@@ -3,27 +3,32 @@ V8_LIB=../v8/out/x64.release
 
 CC=g++
 CFLAGS=-c -fPIC -I$(V8_INC) -Wall
-LDFLAGS=-macosx_version_min 10.7 -dylib -L. -L$(V8_LIB) -rpath . -lv8 -lc -lstdc++
+COMMON_LDFLAGS=--Wl,-macosx_version_min=10.7 -Wl,-rpath -Wl,. -L. -lv8-clj-v8
+LIBRARY_LDFLAGS=-shared -dylib $(COMMON_LDFLAGS)
 SOURCES=v8wrapper.cc
 OBJECTS=$(SOURCES:.cc=.o)
+V8=libv8-clj-v8.dylib
 TARGET=libv8wrapper.dylib
 
 all: $(TARGET)
 
 clean:
-	rm -f *.o *.so *.dylib
+	rm -f *.o *.so *.dylib test
 
 .cc.o:
 	$(CC) $(CFLAGS) $< -o $@
 
-$(TARGET): $(OBJECTS) Makefile.macosx
-	ld $(LDFLAGS) $(OBJECTS) -o $(TARGET)
-	install_name_tool -change `greadlink -f $(V8_LIB)/libv8.dylib` @loader_path/libv8.dylib $(TARGET)
+$(V8): $(MAKEFILES)
+	cp $(V8_LIB)/libv8.dylib $(V8)
+	install_name_tool -id libv8-clj-v8.dylib libv8-clj-v8.dylib
+
+$(TARGET): $(OBJECTS) $(MAKEFILES) $(V8)
+	$(CC) -o $(TARGET) $(OBJECTS) $(LIBRARY_LDFLAGS)
 
 
-test: $(TARGET) test.cpp Makefile.macosx
+test: $(TARGET) test.cpp $(MAKEFILES)
 	$(CC) $(CFLAGS) -ggdb3 test.cpp -o test.o
-	$(CC) -L$(V8_LIB) -ggdb3 -lv8 -lc -lstdc++ -lboost_thread-mt -lboost_system-mt libv8wrapper.dylib test.o -o ./test
+	$(CC) -o ./test test.o $(TARGET) -ggdb3 $(COMMON_LDFLAGS) -lboost_thread-mt -lboost_system-mt
 
 check: test
 	./test
