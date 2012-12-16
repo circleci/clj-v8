@@ -1,14 +1,15 @@
 V8_INC=../v8/include
 V8_LIB=../v8/out/x64.release
+V8=libv8.dylib.clj-v8
 
 CC=g++
 CFLAGS=-c -fPIC -I$(V8_INC) -Wall
-COMMON_LDFLAGS=--Wl,-macosx_version_min=10.7 -Wl,-rpath -Wl,. -L. -lv8-clj-v8
+COMMON_LDFLAGS=--Wl,-macosx_version_min=10.7 -Wl,-rpath -Wl,. -L. ./$(V8)
 LIBRARY_LDFLAGS=-shared -dylib $(COMMON_LDFLAGS)
 SOURCES=v8wrapper.cc
 OBJECTS=$(SOURCES:.cc=.o)
-V8=libv8-clj-v8.dylib
 TARGET=libv8wrapper.dylib
+MAKEFILES=Makefile.macosx Makefile.linux Makefile.linux.32
 
 all: $(TARGET)
 
@@ -18,17 +19,17 @@ clean:
 .cc.o: $(MAKEFILES)
 	$(CC) $(CFLAGS) $< -o $@
 
-$(V8): $(MAKEFILES)
-	cp $(V8_LIB)/libv8.dylib $(V8)
+$(V8): $(MAKEFILES) $(OBJECTS)
+	cp $(V8_LIB)/libv8.so.clj-v8 $(V8)
 	install_name_tool -id $(V8) $(V8)
 
 $(TARGET): $(OBJECTS) $(MAKEFILES) $(V8)
 	$(CC) -o $(TARGET) $(OBJECTS) $(LIBRARY_LDFLAGS)
-	install_name_tool -change $(V8) @loader_path/$(V8) $(TARGET)
 
-test: $(TARGET) test.cpp $(MAKEFILES)
+test: $(TARGET) test.cpp $(MAKEFILES) $(V8)
 	$(CC) $(CFLAGS) -ggdb3 test.cpp -o test.o
 	$(CC) -o ./test test.o $(TARGET) -ggdb3 $(COMMON_LDFLAGS) -lboost_thread-mt -lboost_system-mt
+
 
 check: test
 	./test
