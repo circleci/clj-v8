@@ -93,8 +93,8 @@ v8::Handle<v8::Value> Read(const v8::Arguments& args) {
 wchar_t *val2wchar(const Handle<Value> v) {
   String::Value ucsstr(v);
 
-  int length = ucsstr.length() + 1;
-  wchar_t *result = (wchar_t*) calloc(sizeof(wchar_t), length);
+  int length = ucsstr.length();
+  wchar_t *result = (wchar_t*) calloc(sizeof(wchar_t), length+1);
 
   for(int i = 0; i < length; i++) {
     result[i] = (*ucsstr)[i];
