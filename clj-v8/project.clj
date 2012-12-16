@@ -5,4 +5,5 @@
                  [clj-v8-native/clj-v8-native "0.1.3"]]
   :dev-dependencies [[midje "1.3.1"]]
   :profiles {:dev {:dependencies [[midje "1.3.1" :exclusions [org.clojure/clojure]]]}}
-  :jvm-opts ["-Djna.library.path=target/native/macosx/x86_64:target/native/linux/x86_64:target/native/linux/x86:native/macosx/x86_64:native/linux/x86_64:native/linux/x86:"])
+  :jvm-opts ["-Djna.library.path=target/native/macosx/x86_64:target/native/linux/x86_64:target/native/linux/x86:native/macosx/x86_64:native/linux/x86_64:native/linux/x86:"
+             "-Djava.library.path=target/native/macosx/x86_64:target/native/linux/x86_64:target/native/linux/x86:native/macosx/x86_64:native/linux/x86_64:native/linux/x86:"])
