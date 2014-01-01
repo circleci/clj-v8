@@ -1,26 +1,44 @@
-;; See https://github.com/overtone/overtone/blob/master/src/overtone/jna_path.clj
-;; This should let us read straight from jars
-(defonce __SET_JNA_PATH__
-  (System/setProperty "jna.library.path" (System/getProperty "java.library.path")))
-
 (ns v8.core
-  (:require [clojure.string :as str])
-  (:import [com.sun.jna WString Native Memory Pointer NativeLibrary]))
+  (:require [clojure.string :as str]
+            [clojure.java.io :as io])
+  (:import [com.sun.jna WString Native Memory Pointer NativeLibrary]
+           [java.io File FileOutputStream]))
 
-;; On linux, libraries are properly loaded using
-;; java.library.path/jna.library.path. However, that's only for libraries loaded
-;; directly from JNA. Libraries loaded by those libraries do not use
-;; java.library.path, only LD_LIBRARY_PATH, which is only set at the very start
-;; of the process and cannot be set in code. The solution is to load
-;; libv8.clj-v8 oursevles so that it is already loaded when v8wrapper is loaded.
-;;
-;; In addition, while JNA allows you to specify the full name of a lib (that is,
-;; containing the "lib" and the version), it only allows this when the version
-;; number is all digits and dots. We can work around it with an absolute path.
-(when (com.sun.jna.Platform/isLinux)
-  (doseq [path (str/split (System/getProperty "jna.library.path") #":")]
-    (let [abs (-> (str path "/" "libv8.so.clj-v8") java.io.File. .getAbsolutePath)]
-      (com.sun.jna.NativeLibrary/getInstance abs))))
+(defn- find-file-path-fragments
+  []
+  (let [os-name (System/getProperty "os.name")
+        os-arch (System/getProperty "os.arch")]
+    (case [os-name os-arch]
+      ["Mac OS X" "x86_64"] ["macosx/x86_64/" ".dylib"]
+      ["Linux" "x86_64"]    ["linux/x86_64/" ".so"]
+      ["Linux" "amd64"]     ["linux/x86_64/" ".so"]
+      ["Linux" "x86"]       ["linux/x86/" ".so"]
+      ["Linux" "i386"]      ["linux/x86/" ".so"]
+      ["Linux" "i486"]      ["linux/x86/" ".so"]
+      ["Linux" "i586"]      ["linux/x86/" ".so"]
+      ["Linux" "i686"]      ["linux/x86/" ".so"]
+      (throw (Exception. (str "Unsupported OS/archetype: " os-name " " os-arch))))))
+
+(defn load-library-from-class-path
+  [name path-postfix]
+  (let [[binary-path binary-extension] (find-file-path-fragments)
+        file-name (str name binary-extension path-postfix)
+        tmp (File. (File. (System/getProperty "java.io.tmpdir")) file-name)
+        lib (io/resource (str "native/" binary-path file-name))
+        in (.openStream lib)
+        out (FileOutputStream. tmp)]
+    (io/copy in out)
+    (.close out)
+    (.close in)
+    (System/load (.getAbsolutePath tmp))
+    (.deleteOnExit tmp)))
+
+(try
+  (System/loadLibrary "v8wrapper")
+  (catch UnsatisfiedLinkError e
+    (load-library-from-class-path "libv8" ".clj-v8")
+    (load-library-from-class-path "libv8wrapper" "")
+    (System/setProperty "jna.library.path" (System/getProperty "java.io.tmpdir"))))
 
 (def LIBRARY (com.sun.jna.NativeLibrary/getInstance "v8wrapper"))
 
@@ -58,4 +76,4 @@
     (try
       (run-script-in-context cx script)
       (finally
-       (cleanup-context cx)))))
+        (cleanup-context cx)))))
