@@ -38,7 +38,7 @@ Read build.sh to see how it all fits together.
 Changelog
 ---------
 
-#### From 0.1.3 to 0.1.4
+#### From 0.1.4 to 0.1.5
 
 - clj-v8 can now be bundled in uberjars. Binaries are copied out of
   the JAR to a temporary directory to be available for JNI. (Magnar Sveen)
@@ -48,4 +48,4 @@ Authors
 --------
 
 clj-v8 and clj-v8-wrapper was built by Paul Biggar <paul@circleci.com> and Ivan
-Stojic <ivans@ordecon.com> from CircleCi (https://circleci.com)
+Stojic <ivans@ordecon.com> from CircleCI (https://circleci.com)
