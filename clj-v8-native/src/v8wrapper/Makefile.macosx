@@ -9,7 +9,7 @@ LIBRARY_LDFLAGS=-shared -dylib $(COMMON_LDFLAGS)
 SOURCES=v8wrapper.cc
 OBJECTS=$(SOURCES:.cc=.o)
 TARGET=libv8wrapper.dylib
-MAKEFILES=Makefile.macosx Makefile.linux Makefile.linux.32
+MAKEFILES=Makefile.macosx Makefile.linux Makefile.linux.32 Makefile.linux-rhel5
 
 all: $(TARGET)
 
