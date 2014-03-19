@@ -13,8 +13,6 @@
                            (.contains (:out lsb) "CentOS release 5")))
         os-name (str (System/getProperty "os.name") (if is-rhel5? " RHEL5" ""))
         os-arch (System/getProperty "os.arch")]
-    (println "clj-v8: os-name:" os-name)
-    (println "clj-v8: os-arch:" os-arch)
     (case [os-name os-arch]
       ["Mac OS X" "x86_64"]    ["macosx/x86_64/" ".dylib"]
       ["Linux RHEL5" "x86_64"] ["linux-rhel5/x86_64/" ".so"]
