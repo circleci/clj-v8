@@ -5,4 +5,10 @@
   <artifactId>clj-v8-native</artifactId>
   <version>0.1.4</version>
   <name>clj-v8-native</name>
+  <licenses>
+    <license>
+      <name>Eclipse Public License 1.0</name>
+      <url>http://opensource.org/licenses/eclipse-1.0.php</url>
+    </license>
+  </licenses>
 </project>
