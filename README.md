@@ -44,15 +44,6 @@ Changelog
   the JAR to a temporary directory to be available for JNI. (Magnar Sveen)
 
 
-Authors
---------
-
-clj-v8 and clj-v8-wrapper was built by:
-
-- Paul Biggar <paul@circleci.com>, Ivan Stojic <ivans@ordecon.com> from CircleCI (https://circleci.com)
-- Magnar Sveen (https://github.com/magnars)
-- Abhishek Reddy (https://github.com/arbscht)
-
 License
 --------
 
