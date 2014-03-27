@@ -3,11 +3,13 @@
             [clojure.java.io :as io]
             [clojure.java.shell :as shell])
   (:import [com.sun.jna WString Native Memory Pointer NativeLibrary]
-           [java.io File FileOutputStream]))
+           [java.io File FileOutputStream IOException]))
 
 (defn- find-file-path-fragments
   []
-  (let [lsb (shell/sh "lsb_release" "-d")
+  (let [lsb (try (shell/sh "lsb_release" "-d")
+                 (catch IOException e
+                   {}))
         is-rhel5? (and (= 0 (:exit lsb))
                        (or (.contains (:out lsb) "Red Hat Enterprise Linux Server release 5")
                            (.contains (:out lsb) "CentOS release 5")))
