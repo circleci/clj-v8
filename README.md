@@ -44,8 +44,9 @@ Changelog
   the JAR to a temporary directory to be available for JNI. (Magnar Sveen)
 
 
-Authors
+License
 --------
 
-clj-v8 and clj-v8-wrapper was built by Paul Biggar <paul@circleci.com> and Ivan
-Stojic <ivans@ordecon.com> from CircleCI (https://circleci.com)
+Distributed under the Eclipse Public License, the same as Clojure uses.
+
+This license applies to this distribution and all prior distributions of clj-v8.
