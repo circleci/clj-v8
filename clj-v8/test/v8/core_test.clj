@@ -2,6 +2,12 @@
   (:require [clojure.test :refer :all]
             [v8.core :as v8]))
 
+(v8/set-flags "--harmony")
+
+(deftest set-flags-test
+  (testing "it works"
+    (is (= (v8/run-script "const x = 45; x;") "45"))))
+
 (deftest run-script-test
   (testing "it works"
    (is (= (v8/run-script "123") "123"))
@@ -28,3 +34,9 @@
       (v8/run-script-in-context cx "x = 17; y = {a: 6};")
       (is (= (v8/run-script-in-context cx "x;") "17"))
       (is (= (v8/run-script-in-context cx "y.a;") "6")))))
+
+(deftest initialize-icu-test
+  (testing "it works"
+    (v8/initialize-icu)))
+
+

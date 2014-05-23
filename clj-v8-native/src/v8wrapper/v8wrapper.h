@@ -14,6 +14,7 @@ extern "C" {
   // compiles and executes JavaScript and returns the script return value as string
   wchar_t* Run(v8_tuple*, wchar_t* source, wchar_t* name);
   
+  void Initialize();
   void InitializeICU();
 
   void SetFlags(wchar_t* flags);

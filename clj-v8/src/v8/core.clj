@@ -46,17 +46,30 @@
 
 (def cleanup-tuple-fn (.getFunction LIBRARY "CleanupTuple"))
 (def create-tuple-fn (.getFunction LIBRARY "CreateTuple"))
+(def initialize-fn (.getFunction LIBRARY "Initialize"))
 (def initialize-icu-fn (.getFunction LIBRARY "InitializeICU"))
 (def run-fn (.getFunction LIBRARY "Run"))
 (def set-flags-fn (.getFunction LIBRARY "SetFlags"))
 
+(defn initialize
+  "Explicitly initialize V8. Note that this is done implicitly as soon as any
+  part of the V8 API is accessed."
+  []
+  (.invokeVoid initialize-fn (into-array [])))
+
+(defn initialize-icu
+  "Initialize I18N (ECMAScript 402) in V8."
+  []
+  (.invokeVoid initialize-icu-fn (into-array [])))
+
 (defn set-flags
-  "Sets V8 flags, e.g. --harmony."
+  "Set V8 flags. Must be called before V8 is initialized. See flag-definitions.h
+  for the full list of flags available: http://git.io/HPcDiw"
   [& flags]
-  (let [args (object-array  [(->> flags
-                                  (interpose " ")
-                                  (apply str)
-                                  (WString.))])]
+  (let [args (object-array [(->> flags
+                                 (interpose " ")
+                                 (apply str)
+                                 (WString.))])]
     (.invokeVoid set-flags-fn args)))
 
 (defn create-context

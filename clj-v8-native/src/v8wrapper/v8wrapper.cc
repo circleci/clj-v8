@@ -241,15 +241,20 @@ int CleanupTuple(v8_tuple* tuple) {
   return 0;
 }
 
+void Initialize() {
+  v8::V8::Initialize();
+}
+
 void InitializeICU() {
   v8::V8::InitializeICU();
 }
 
 void SetFlags(wchar_t* flags) {
-  unsigned int length = wcslen(flags) * (sizeof(char) / sizeof(wchar_t));
-  char buf[length];
+  unsigned int length = wcslen(flags);
+  char buf[length + 1];
+  buf[length] = '\0';
   wcstombs(buf, flags, (size_t) length);
-  
+
   v8::V8::SetFlagsFromString(buf, length);
 }
 
