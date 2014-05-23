@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>clj-v8-native</groupId>
   <artifactId>clj-v8-native</artifactId>
-  <version>0.1.4</version>
+  <version>0.1.5</version>
   <name>clj-v8-native</name>
   <licenses>
     <license>

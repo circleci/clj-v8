@@ -1,10 +1,12 @@
 V8_INC=../v8/include
 V8_LIB=../v8/out/x64.release
-V8=libv8.dylib.clj-v8
+V8=libv8.dylib
+ICU_I18N=libicui18n.dylib
+ICU_UC=libicuuc.dylib
 
 CC=g++
 CFLAGS=-c -fPIC -I$(V8_INC) -Wall
-COMMON_LDFLAGS=--Wl,-macosx_version_min=10.7 -Wl,-rpath -Wl,. -L. ./$(V8)
+COMMON_LDFLAGS=--Wl,-macosx_version_min=10.7 -Wl,--rpath='.:$$ORIGIN' -Wl,-L.,-l:$(V8),-l:$(ICU_I18N),-l:$(ICU_UC)
 LIBRARY_LDFLAGS=-shared -dylib $(COMMON_LDFLAGS)
 SOURCES=v8wrapper.cc
 OBJECTS=$(SOURCES:.cc=.o)
@@ -14,22 +16,34 @@ MAKEFILES=Makefile.macosx Makefile.linux Makefile.linux.32
 all: $(TARGET)
 
 clean:
-	rm -f *.o *.so *.dylib test
+	rm -f *.o *.so *.dylib *.clj-v8 test
 
 .cc.o: $(MAKEFILES)
 	$(CC) $(CFLAGS) $< -o $@
 
+$(ICU_I18N):
+	cp $(V8_LIB)/$(ICU_I18N:.clj-v8=) $(ICU_I18N)
+	patchelf --set-rpath '.:$$ORIGIN' $(ICU_I18N)
+	install_name_tool -id $(ICU_I18N) $(ICU_I18N)
+
+$(ICU_UC):
+	cp $(V8_LIB)/$(ICU_UC:.clj-v8=) $(ICU_UC)
+	patchelf --set-rpath '.:$$ORIGIN' $(ICU_UC)
+	install_name_tool -id $(ICU_UC) $(ICU_UC)
+
 $(V8): $(MAKEFILES) $(OBJECTS)
 	cp $(V8_LIB)/libv8.so.clj-v8 $(V8)
+	patchelf --set-rpath '.:$$ORIGIN' $(V8)
 	install_name_tool -id $(V8) $(V8)
 
-$(TARGET): $(OBJECTS) $(MAKEFILES) $(V8)
+$(TARGET): $(OBJECTS) $(MAKEFILES) $(V8) $(ICU_I18N) $(ICU_UC)
 	$(CC) -o $(TARGET) $(OBJECTS) $(LIBRARY_LDFLAGS)
 	install_name_tool -change $(V8) @loader_path/$(V8) $(TARGET)
 
-test: $(TARGET) test.cpp $(MAKEFILES) $(V8)
-	$(CC) $(CFLAGS) -ggdb3 test.cpp -o test.o
-	$(CC) -o ./test test.o $(TARGET) -ggdb3 $(COMMON_LDFLAGS) -lboost_thread-mt -lboost_system-mt
+test: $(TARGET) test.cc $(MAKEFILES) $(V8)
+	$(CC) $(CFLAGS) -ggdb3 test.cc -o test.o
+	$(CC) -o ./test test.o $(TARGET) -ggdb3 $(COMMON_LDFLAGS) \
+		-lboost_thread -lboost_system
 
 
 check: test
