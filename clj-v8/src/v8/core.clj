@@ -98,10 +98,12 @@
   (.invokeVoid cleanup-tuple-fn (into-array [cx])))
 
 (defn run-script
-  "Compiles and runs a JS file"
-  [source]
-  (let [cx (create-context)]
-    (try
-      (run-script-in-context cx source)
-      (finally
-        (cleanup-context cx)))))
+  "Compiles and runs JavaScript code."
+  ([source]
+     (run-script source "unknown"))
+  ([source name]
+     (let [cx (create-context)]
+       (try
+         (run-script-in-context cx source name)
+         (finally
+           (cleanup-context cx))))))
