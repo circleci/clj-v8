@@ -1,10 +1,12 @@
 V8_INC=../v8/include
 V8_LIB=../v8/out/x64.release/lib.target
-V8=libv8.so.clj-v8
+V8=libv8.so
+ICU_I18N=libicui18n.so
+ICU_UC=libicuuc.so
 
 CC=g++
 CFLAGS=-c -fPIC -I$(V8_INC) -Wall
-COMMON_LDFLAGS=-Wl,--rpath -Wl,. -L. $(V8)
+COMMON_LDFLAGS=-Wl,--rpath='.:$$ORIGIN' -Wl,-L.,-l:$(V8),-l:$(ICU_I18N),-l:$(ICU_UC)
 LIBRARY_LDFLAGS=-shared $(COMMON_LDFLAGS)
 SOURCES=v8wrapper.cc
 OBJECTS=$(SOURCES:.cc=.o)
@@ -14,21 +16,30 @@ MAKEFILES=Makefile.macosx Makefile.linux Makefile.linux.32
 all: $(TARGET)
 
 clean:
-	rm -f *.o *.so *.dylib test
+	rm -f *.o *.so *.dylib *.clj-v8 suppressions.txt test
 
 .cc.o: $(MAKEFILES)
 	$(CC) $(CFLAGS) $< -o $@
 
+$(ICU_I18N):
+	cp $(V8_LIB)/$(ICU_I18N) .
+	patchelf --set-rpath '.:$$ORIGIN' $(ICU_I18N)
+
+$(ICU_UC):
+	cp $(V8_LIB)/$(ICU_UC) .
+	patchelf --set-rpath '.:$$ORIGIN' $(ICU_UC)
+
 $(V8): $(MAKEFILES) $(OBJECTS)
 	cp $(V8_LIB)/$(V8) .
+	patchelf --set-rpath '.:$$ORIGIN' $(V8)
 
-$(TARGET): $(OBJECTS) $(MAKEFILES) $(V8)
+$(TARGET): $(OBJECTS) $(MAKEFILES) $(V8) $(ICU_I18N) $(ICU_UC)
 	$(CC) -o $(TARGET) $(OBJECTS) $(LIBRARY_LDFLAGS)
 
-test: $(TARGET) test.cpp $(MAKEFILES) $(V8)
-	$(CC) $(CFLAGS) -ggdb3 test.cpp -o test.o
-	$(CC) -o ./test test.o $(TARGET) -ggdb3 $(COMMON_LDFLAGS) -lboost_thread-mt -lboost_system-mt
-
+test: $(TARGET) test.cc $(MAKEFILES) $(V8)
+	$(CC) $(CFLAGS) -ggdb3 test.cc -o test.o
+	$(CC) -o ./test test.o $(TARGET) -ggdb3 $(COMMON_LDFLAGS) \
+		-lboost_thread -lboost_system
 
 check: test
 	./test

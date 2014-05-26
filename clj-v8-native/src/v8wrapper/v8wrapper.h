@@ -5,19 +5,22 @@
 extern "C" {
 #endif
 
-  /* Single object to hold values in Java-land */
-  struct _v8tuple;
-  typedef struct _v8tuple v8tuple;
+  // single object to hold values in Java-land
+  typedef struct v8_tuple_s v8_tuple;
 
-  v8tuple* create_tuple();
-  int cleanup_tuple(v8tuple* tuple);
+  v8_tuple* CreateTuple();
+  int CleanupTuple(v8_tuple* tuple);
 
-  // compiles and executes javascript and returns the script return value as string
-  wchar_t *run(v8tuple*, wchar_t *js);
+  // compiles and executes JavaScript and returns the script return value as string
+  wchar_t* Run(v8_tuple*, wchar_t* source, wchar_t* name);
+  
+  void Initialize();
+  void InitializeICU();
+
+  void SetFlags(wchar_t* flags);
 
   // free memory returned from the last run call
-  int cleanup(void *lastresult);
-
+  int Cleanup(void* last_result);
 
 #ifdef __cplusplus
 }

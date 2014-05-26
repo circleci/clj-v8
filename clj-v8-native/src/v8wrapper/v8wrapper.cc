@@ -1,58 +1,54 @@
-#include <cstdlib>
-#include <iostream>
-#include <wchar.h>
-#include <errno.h>
-#include <v8.h>
-#include <string.h>
 #include <cassert>
+#include <cstdlib>
+#include <errno.h>
+#include <iostream>
+#include <string.h>
+#include <v8.h>
+#include <wchar.h>
+
 #include "v8wrapper.h"
 
-using namespace v8;
-
-const char* ToCString(const String::Utf8Value& value) {
+const char* ToCString(const v8::String::Utf8Value& value) {
   return *value ? *value : "<string conversion failed>";
 }
 
-void ReportException(v8::TryCatch* try_catch) {
-  v8::HandleScope handle_scope;
+void ReportException(v8::Isolate* isolate, v8::TryCatch* try_catch) {
+  v8::HandleScope handle_scope(isolate);
   v8::String::Utf8Value exception(try_catch->Exception());
   const char* exception_string = ToCString(exception);
   v8::Handle<v8::Message> message = try_catch->Message();
   if (message.IsEmpty()) {
     // V8 didn't provide any extra information about this error; just
     // print the exception.
-    fprintf(stderr, "%s\n", exception_string);
+    printf("%s\n", exception_string);
   } else {
     // Print (filename):(line number): (message).
     v8::String::Utf8Value filename(message->GetScriptResourceName());
     const char* filename_string = ToCString(filename);
     int linenum = message->GetLineNumber();
-    fprintf(stderr, "%s:%i: %s\n", filename_string, linenum, exception_string);
+    printf("%s:%i: %s\n", filename_string, linenum, exception_string);
     // Print line of source code.
     v8::String::Utf8Value sourceline(message->GetSourceLine());
     const char* sourceline_string = ToCString(sourceline);
-    fprintf(stderr, "%s\n", sourceline_string);
+    printf("%s\n", sourceline_string);
     // Print wavy underline (GetUnderline is deprecated).
     int start = message->GetStartColumn();
     for (int i = 0; i < start; i++) {
-      fprintf(stderr, " ");
+      printf(" ");
     }
     int end = message->GetEndColumn();
     for (int i = start; i < end; i++) {
-      fprintf(stderr, "^");
+      printf("^");
     }
-    fprintf(stderr, "\n");
-    v8::String::Utf8Value stack_trace(try_catch->StackTrace());
-    if (stack_trace.length() > 0) {
-      const char* stack_trace_string = ToCString(stack_trace);
-      fprintf(stderr, "%s\n", stack_trace_string);
-    }
+    printf("\n");
   }
 }
 
-Handle<String> ReadFile(const char* name) {
-  FILE* file = fopen(name, "rb");
-  if (file == NULL) return Handle<String>();
+v8::Handle<v8::String> ReadFile(v8::Isolate* isolate, const char* filename) {
+  FILE* file = fopen(filename, "rb");
+  
+  if (file == NULL) {
+    return v8::Handle<v8::String>(); }
 
   fseek(file, 0, SEEK_END);
   int size = ftell(file);
@@ -60,83 +56,105 @@ Handle<String> ReadFile(const char* name) {
 
   char* chars = new char[size + 1];
   chars[size] = '\0';
+  
   for (int i = 0; i < size;) {
     int read = static_cast<int>(fread(&chars[i], 1, size - i, file));
     i += read;
   }
+  
   fclose(file);
-  Handle<String> result = String::New(chars, size);
+  
+  v8::Handle<v8::String> result =
+      v8::String::NewFromUtf8(isolate, chars, v8::String::kNormalString, size);
+  
   delete[] chars;
+  
   return result;
 }
 
-// The callback that is invoked by v8 whenever the JavaScript 'read'
-// function is called.  This function loads the content of the file named in
-// the argument into a JavaScript string.
-v8::Handle<v8::Value> Read(const v8::Arguments& args) {
+// The callback that is invoked by v8 whenever the JavaScript 'read' function is
+// called. Loads content of the file named in the argument into a JavaScript
+// string.
+void Read(const v8::FunctionCallbackInfo<v8::Value>& args) {
+  v8::Isolate* isolate = args.GetIsolate();
+  
   if (args.Length() != 1) {
-    return v8::ThrowException(v8::String::New("Bad parameters"));
+    isolate->ThrowException(
+      v8::String::NewFromUtf8(isolate, "Too many arguments"));
+    return;
   }
-  v8::String::Utf8Value file(args[0]);
-  if (*file == NULL) {
-    return v8::ThrowException(v8::String::New("Error loading file"));
+
+  v8::String::Utf8Value filename(args[0]);
+  
+  if (*filename == NULL) {
+    isolate->ThrowException(
+      v8::String::NewFromUtf8(isolate, "Bad filename"));
+    return;
   }
-  v8::Handle<v8::String> source = ReadFile(*file);
-  if (source.IsEmpty()) {
-    return v8::ThrowException(v8::String::New("Error loading file"));
+  
+  v8::Handle<v8::String> content = ReadFile(isolate, *filename);
+  
+  if (content.IsEmpty()) {
+    isolate->ThrowException(
+      v8::String::NewFromUtf8(isolate, "Error reading file (empty?)"));
+    return;
   }
-  return source;
+
+  args.GetReturnValue().Set(content);
 }
 
+wchar_t* ValueToWChar(const v8::Handle<v8::Value> val) {
+  v8::String::Utf8Value vals(val);
+  const char* cs = *vals;
+  int length = strlen(cs) + 1;
+  wchar_t* wcs = new wchar_t[length];
 
-
-wchar_t *val2wchar(const Handle<Value> v) {
-  String::Value ucsstr(v);
-
-  int length = ucsstr.length();
-  wchar_t *result = (wchar_t*) calloc(sizeof(wchar_t), length+1);
-
-  for(int i = 0; i < length; i++) {
-    result[i] = (*ucsstr)[i];
-  }
-
-  return result;
+  // convert to wchar_t
+  mbstowcs(wcs, cs, length);
+  
+  return wcs;
 }
 
-Handle<String> wchar2v8string(wchar_t* w) {
+v8::Handle<v8::String> WCharToString(v8::Isolate* isolate, wchar_t* w) {
   int length = wcslen(w);
-  uint16_t *u16 = (uint16_t*) calloc(length+1, sizeof(uint16_t));
-
-  for(int i = 0; i < length; i++) {
-    u16[i] = w[i];
+  int i;
+  uint16_t* buf = (uint16_t*) calloc(length + 1, sizeof(uint16_t));
+  
+  for (i = 0; i < length; i++) {
+    buf[i] = w[i];
   }
+  
+  v8::Handle<v8::String> result =
+    v8::String::NewFromTwoByte(isolate, buf, v8::String::kNormalString, length);
 
-  Handle<String> result = String::New(u16);
-  free(u16);
-
+  free(buf);
+  
   return result;
 }
 
+v8::Handle<v8::Value> RunInSameScope(v8::Isolate* isolate,
+				     v8::Handle<v8::String> source,
+				     v8::Handle<v8::String> name)
+{
+  // can create new scope, but must change return type to persistent
+  // v8::HandleScope handle_scope(isolate);
 
-
-Handle<Value> run_scoped(Handle<String> src) {
-  v8::HandleScope handle_scope;
-
-  TryCatch trycatch;
-  Handle<Value> result;
-
-  Handle<Script> script = Script::Compile(src);
-  if (*script == NULL) { // parse/compile failure
-    result = trycatch.Exception();
-    ReportException(&trycatch);
+  v8::ScriptOrigin origin(name);
+  v8::TryCatch try_catch;
+  v8::Handle<v8::Script> script = v8::Script::Compile(source, &origin);
+  v8::Handle<v8::Value> result;
+  
+  if (script.IsEmpty()) {
+    result = try_catch.Exception();
+    ReportException(isolate, &try_catch);
     errno = -1;
   } else {
     result = script->Run();
     errno = 0;
 
-    if (result.IsEmpty()) { // canonical way to test for exceptions
-      result = trycatch.Exception();
-      ReportException(&trycatch);
+    if (try_catch.HasCaught()) {
+      result = try_catch.Exception();
+      ReportException(isolate, &try_catch);
       errno = -69;
     }
   }
@@ -144,67 +162,103 @@ Handle<Value> run_scoped(Handle<String> src) {
   return result;
 }
 
-Persistent<Context> createContext (v8::Isolate* isolate)
+v8::Persistent< v8::Context, v8::CopyablePersistentTraits<v8::Context> >
+CreateContext(v8::Isolate* isolate)
 {
   v8::Locker locker(isolate);
-  v8::Isolate::Scope iso_scope(isolate);
-  v8::HandleScope handle_scope;
-  Handle<ObjectTemplate> global;
+  v8::Isolate::Scope isolate_scope(isolate);
+  v8::HandleScope handle_scope(isolate);
 
-  // add readFile
-  global = ObjectTemplate::New();
-  global->Set(String::New("readFile"), FunctionTemplate::New(Read));
+  v8::Handle<v8::ObjectTemplate> global = v8::ObjectTemplate::New(isolate);
 
-  // init context
-  return Context::New(NULL, global);
+  // bind the global 'readFile'
+  global->Set(v8::String::NewFromUtf8(isolate, "readFile"),
+	      v8::FunctionTemplate::New(isolate, Read));
+
+  // create context
+  v8::Handle<v8::Context> context = v8::Context::New(isolate, NULL, global);
+
+  // make it persist outside this scope
+  // see: http://stackoverflow.com/questions/22646546
+  v8::Persistent< v8::Context, v8::CopyablePersistentTraits<v8::Context> >
+    persistent_context(isolate, context);
+
+  return persistent_context;
 }
 
-struct _v8tuple {
+struct v8_tuple_s {
   v8::Isolate* isolate;
-  v8::Persistent<v8::Context> context;
+  v8::Persistent< v8::Context, v8::CopyablePersistentTraits<v8::Context> > context;
 };
 
+v8_tuple* CreateTuple() {
+  v8::Isolate* isolate = v8::Isolate::New();
 
-v8tuple* create_tuple() {
-  v8tuple* tuple = new v8tuple;
-  tuple->isolate = v8::Isolate::New();
-  tuple->context = createContext(tuple->isolate);
+  v8::Persistent< v8::Context, v8::CopyablePersistentTraits<v8::Context> >
+    context = CreateContext(isolate);
+  
+  v8_tuple* tuple = new v8_tuple;
+  
+  tuple->isolate = isolate;
+  tuple->context = context;
+  
   return tuple;
 }
 
+wchar_t* Run(v8_tuple* tuple, wchar_t* source, wchar_t* name) {
+  wchar_t* result = NULL;
 
-wchar_t *run(v8tuple* tuple, wchar_t *jssrc) {
+  // acquire isolate
+  v8::Locker locker(tuple->isolate);
+  v8::Isolate::Scope isolate_scope(tuple->isolate);
+  v8::HandleScope handle_scope(tuple->isolate);
 
-  // convert input
-  wchar_t* result_str = NULL;
-  {
-     v8::Locker locker(tuple->isolate);
-     v8::Isolate::Scope iso_scope(tuple->isolate);
-     // run
-     {
-       Context::Scope context_scope(tuple->context);
-       v8::HandleScope handle_scope;
-       Handle<String> src = wchar2v8string(jssrc);
-       Handle<Value> result = run_scoped(src);
-       result_str = val2wchar(result);
-     }
-  }
+  v8::Local<v8::Context> context
+    = v8::Local<v8::Context>::New(tuple->isolate, tuple->context);
+  
+  // enter the execution environment  
+  v8::Context::Scope context_scope(context);
 
-  return result_str;
+  v8::Handle<v8::String> source_ = WCharToString(tuple->isolate, source);
+  v8::Handle<v8::String> name_ = WCharToString(tuple->isolate, name);
+  
+  // run the script
+  v8::Handle<v8::Value> result_ = RunInSameScope(tuple->isolate, source_, name_);
+  result = ValueToWChar(result_);
+  
+  return result;
 }
 
-
-int cleanup_tuple(v8tuple* tuple) {
+int CleanupTuple(v8_tuple* tuple) {
   {
     v8::Locker locker(tuple->isolate);
-    v8::Isolate::Scope iso_scope(tuple->isolate);
-    tuple->context.Dispose();
+    v8::Isolate::Scope isolate_scope(tuple->isolate);
   }
+
   tuple->isolate->Dispose();
+  free(tuple);
+  
   return 0;
 }
 
-int cleanup(void* lastresult) {
-  free(lastresult);
+void Initialize() {
+  v8::V8::Initialize();
+}
+
+void InitializeICU() {
+  v8::V8::InitializeICU();
+}
+
+void SetFlags(wchar_t* flags) {
+  unsigned int length = wcslen(flags);
+  char buf[length + 1];
+  buf[length] = '\0';
+  wcstombs(buf, flags, (size_t) length);
+
+  v8::V8::SetFlagsFromString(buf, length);
+}
+
+int Cleanup(void* last_result) {
+  free(last_result);
   return 0;
 }
