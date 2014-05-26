@@ -1,7 +1,6 @@
 (ns v8.core
   (:require [clojure.java.io :as io])
-  (:import [com.sun.jna Memory Native NativeLibrary Pointer WString]
-           [java.io File FileOutputStream]))
+  (:import [com.sun.jna Memory Native NativeLibrary Pointer WString]))
 
 (def libraries ["icui18n" "icuuc" "v8" "v8wrapper"])
 
@@ -22,20 +21,21 @@
 (def library-path
   (let [[parent-dir ext] library-path-fragments
         user-dir (System/getProperty "user.dir")
-        native-dir (io/as-file (str user-dir "/" "target/native"))]
+        native-dir (io/file user-dir "target/native")]
     (if (.isDirectory native-dir)
       ;; extracted automatically by leiningen
-      (.getAbsolutePath (File. native-dir parent-dir))
+      (.getAbsolutePath (io/file native-dir parent-dir))
       ;; must extract manually
-      (let [tmp-dir (File. (System/getProperty "java.io.tmpdir")
-                           (str "/clj-v8/" parent-dir))]
+      (let [tmp-dir (-> "java.io.tmpdir"
+                        System/getProperty
+                        (io/file "clj-v8" parent-dir))]
         (.mkdirs tmp-dir)
         (doall (->> libraries
                     (map #(str % ext)) ; append extension
                     (map #(let [in (-> (str "native/" parent-dir %)
                                        io/resource
                                        io/as-file)
-                                out (File. tmp-dir %)]
+                                out (io/file tmp-dir %)]
                             (io/copy in out)))))
         (.getAbsolutePath tmp-dir)))))
 
