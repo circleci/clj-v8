@@ -1,22 +1,31 @@
 (ns v8.core
   (:require [clojure.string :as str]
-            [clojure.java.io :as io])
+            [clojure.java.io :as io]
+            [clojure.java.shell :as shell])
   (:import [com.sun.jna WString Native Memory Pointer NativeLibrary]
-           [java.io File FileOutputStream]))
+           [java.io File FileOutputStream IOException]))
 
 (defn- find-file-path-fragments
   []
-  (let [os-name (System/getProperty "os.name")
+  (let [lsb (try (shell/sh "lsb_release" "-d")
+                 (catch IOException e
+                   {}))
+        is-rhel5? (and (= 0 (:exit lsb))
+                       (or (.contains (:out lsb) "Red Hat Enterprise Linux Server release 5")
+                           (.contains (:out lsb) "CentOS release 5")))
+        os-name (str (System/getProperty "os.name") (if is-rhel5? " RHEL5" ""))
         os-arch (System/getProperty "os.arch")]
     (case [os-name os-arch]
-      ["Mac OS X" "x86_64"] ["macosx/x86_64/" ".dylib"]
-      ["Linux" "x86_64"]    ["linux/x86_64/" ".so"]
-      ["Linux" "amd64"]     ["linux/x86_64/" ".so"]
-      ["Linux" "x86"]       ["linux/x86/" ".so"]
-      ["Linux" "i386"]      ["linux/x86/" ".so"]
-      ["Linux" "i486"]      ["linux/x86/" ".so"]
-      ["Linux" "i586"]      ["linux/x86/" ".so"]
-      ["Linux" "i686"]      ["linux/x86/" ".so"]
+      ["Mac OS X" "x86_64"]    ["macosx/x86_64/" ".dylib"]
+      ["Linux RHEL5" "x86_64"] ["linux-rhel5/x86_64/" ".so"]
+      ["Linux RHEL5" "amd64"]  ["linux-rhel5/x86_64/" ".so"]
+      ["Linux" "x86_64"]       ["linux/x86_64/" ".so"]
+      ["Linux" "amd64"]        ["linux/x86_64/" ".so"]
+      ["Linux" "x86"]          ["linux/x86/" ".so"]
+      ["Linux" "i386"]         ["linux/x86/" ".so"]
+      ["Linux" "i486"]         ["linux/x86/" ".so"]
+      ["Linux" "i586"]         ["linux/x86/" ".so"]
+      ["Linux" "i686"]         ["linux/x86/" ".so"]
       (throw (Exception. (str "Unsupported OS/archetype: " os-name " " os-arch))))))
 
 (defn load-library-from-class-path

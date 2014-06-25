@@ -1,0 +1,34 @@
+V8_INC=../v8/include
+V8_LIB=../v8/out/x64.release/lib.target
+V8=libv8.so.clj-v8
+
+CC=g++
+CFLAGS=-c -fPIC -I$(V8_INC) -Wall
+COMMON_LDFLAGS=-Wl,--rpath -Wl,. -L. $(V8)
+LIBRARY_LDFLAGS=-shared $(COMMON_LDFLAGS)
+SOURCES=v8wrapper.cc
+OBJECTS=$(SOURCES:.cc=.o)
+TARGET=libv8wrapper.so
+MAKEFILES=Makefile.macosx Makefile.linux Makefile.linux.32 Makefile.linux-rhel5
+
+all: $(TARGET)
+
+clean:
+	rm -f *.o *.so *.dylib test
+
+.cc.o: $(MAKEFILES)
+	$(CC) $(CFLAGS) $< -o $@
+
+$(V8): $(MAKEFILES) $(OBJECTS)
+	cp $(V8_LIB)/$(V8) .
+
+$(TARGET): $(OBJECTS) $(MAKEFILES) $(V8)
+	$(CC) -o $(TARGET) $(OBJECTS) $(LIBRARY_LDFLAGS)
+
+test: $(TARGET) test.cpp $(MAKEFILES) $(V8)
+	$(CC) $(CFLAGS) -ggdb3 test.cpp -o test.o
+	$(CC) -o ./test test.o $(TARGET) -ggdb3 $(COMMON_LDFLAGS) -lboost_thread-mt -lboost_system-mt
+
+
+check: test
+	./test
