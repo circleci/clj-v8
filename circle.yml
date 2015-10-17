@@ -1,0 +1,11 @@
+machine:
+  java:
+    version: oraclejdk8
+
+dependencies:
+  override:
+    - cd clj-v8 && lein deps
+
+test:
+  override:
+    - cd clj-v8 && lein midje
