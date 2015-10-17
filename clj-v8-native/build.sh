@@ -18,12 +18,12 @@ function detect {
 
         if [ "`uname -m`" != "x86_64" ]; then
             echo "This is a 32-bit only Linux. I'd suggest you find a 64-bit build box. Sorry."
-            exit
+            exit 1
         fi
 
     else
         echo "I don't know how to build/package everything on `uname` platform. Sorry"
-        exit
+        exit 1
     fi
 }
 
