@@ -4,8 +4,10 @@ machine:
 
 dependencies:
   override:
+    - git submodule update --init
     - cd clj-v8 && lein deps
 
 test:
   override:
     - cd clj-v8 && lein test
+    - cd clj-v8-native && ./build.sh
