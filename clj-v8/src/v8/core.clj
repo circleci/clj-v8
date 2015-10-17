@@ -4,6 +4,8 @@
   (:import [com.sun.jna WString Native Memory Pointer NativeLibrary]
            [java.io File FileOutputStream]))
 
+(declare LIBRARY)
+
 (defn- find-file-path-fragments
   []
   (let [os-name (System/getProperty "os.name")
@@ -33,12 +35,13 @@
     (System/load (.getAbsolutePath tmp))
     (.deleteOnExit tmp)))
 
-(try
-  (System/loadLibrary "v8wrapper")
-  (catch UnsatisfiedLinkError e
-    (load-library-from-class-path "libv8" ".clj-v8")
-    (load-library-from-class-path "libv8wrapper" "")
-    (System/setProperty "jna.library.path" (System/getProperty "java.io.tmpdir"))))
+(when-not (bound? #'LIBRARY)
+  (try
+    (System/loadLibrary "v8wrapper")
+    (catch UnsatisfiedLinkError e
+      (load-library-from-class-path "libv8" ".clj-v8")
+      (load-library-from-class-path "libv8wrapper" "")
+      (System/setProperty "jna.library.path" (System/getProperty "java.io.tmpdir")))))
 
 (def LIBRARY (com.sun.jna.NativeLibrary/getInstance "v8wrapper"))
 
