@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 function create_output_dirs {
     mkdir -p build/lib
     mkdir -p build/native/{macosx,linux}
