@@ -1,6 +1,6 @@
 (ns v8.core
-  (:require [clojure.string :as str]
-            [clojure.java.io :as io])
+  (:require [clojure.java.io :as io]
+            [clojure.string :as str])
   (:import [com.sun.jna WString Native Memory Pointer NativeLibrary]
            [java.io File FileOutputStream]))
 
@@ -19,11 +19,18 @@
       ["Linux" "i686"]      ["linux/x86/" ".so"]
       (throw (Exception. (str "Unsupported OS/archetype: " os-name " " os-arch))))))
 
+(defonce library-path
+  (let [library-path-file (File. (System/getProperty "java.io.tmpdir")
+                                 (str (java.util.UUID/randomUUID)))]
+    (.mkdirs library-path-file)
+    (.deleteOnExit library-path-file)
+    (.getAbsolutePath library-path-file)))
+
 (defn load-library-from-class-path
   [name path-postfix]
   (let [[binary-path binary-extension] (find-file-path-fragments)
         file-name (str name binary-extension path-postfix)
-        tmp (File. (File. (System/getProperty "java.io.tmpdir")) file-name)
+        tmp (File. library-path file-name)
         lib (io/resource (str "native/" binary-path file-name))
         in (.openStream lib)
         out (FileOutputStream. tmp)]
@@ -38,7 +45,7 @@
   (catch UnsatisfiedLinkError e
     (load-library-from-class-path "libv8" ".clj-v8")
     (load-library-from-class-path "libv8wrapper" "")
-    (System/setProperty "jna.library.path" (System/getProperty "java.io.tmpdir"))))
+    (System/setProperty "jna.library.path" library-path)))
 
 (def LIBRARY (com.sun.jna.NativeLibrary/getInstance "v8wrapper"))
 
